@@ -65,7 +65,7 @@ def main():
 	warnings.filterwarnings('ignore')
 
 	### Step.1 Loading data
-	trainDir = 'audio_Marjolein/'
+	trainDir = 'new_spoken_digit/'
 	print('Step.1 data loading...')
 	trainDataSet,testDataSet = buildDataSet(trainDir,rte=0)
 	print("Finish prepare the data")
