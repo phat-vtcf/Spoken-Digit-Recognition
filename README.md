@@ -1,3 +1,8 @@
+Programming: Assignment 7
+By Marjolein Spijkerman and Sarah Faste
+
+A sudoku solver using speech recognition for the recognition of spoken digits
+
 This github has 4 main components
 - a folder containing the dataset
 - SDR.py, which is used to train an HMM model on the dataset
