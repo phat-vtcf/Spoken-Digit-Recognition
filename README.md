@@ -20,7 +20,11 @@ To run this code, you can either run it on
 
 To get the code to work on anaconda do the following:
 - install anaconda
-- create a new environment: conda create -n env python = 3.7
+- create a new environment: conda create -n env python=3.7
 - activate the environment: conda activate env
 Then install all the need packages:
-- 
+- conda install -c conda-forge python-sounddevice
+- conda install -c anaconda scipy
+- conda install -c conda-forge librosa
+- conda install seaborn
+- conda install -c conda-forge hmmlearn
