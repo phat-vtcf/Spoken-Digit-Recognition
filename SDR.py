@@ -69,8 +69,6 @@ def main():
 	print('Step.1 data loading...')
 	trainDataSet,testDataSet = buildDataSet(trainDir,rte=0)
 	print("Finish prepare the data")
-	print(len(trainDataSet))
-	print(len(testDataSet))
 
 	### Step.2 Training
 	print('Step.2 Training model...')

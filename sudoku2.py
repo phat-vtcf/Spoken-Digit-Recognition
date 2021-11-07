@@ -5,7 +5,6 @@ import sounddevice as sd
 from scipy.io.wavfile import write
 import numpy as np
 import sklearn 
-#from sklearn import hmm
 from hmmlearn.hmm import GMMHMM
 from librosa.feature import mfcc
 import warnings
@@ -17,15 +16,22 @@ import librosa
 import random
 import pickle
 import tkinter.font as font
+import matplotlib
+import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-
+matplotlib.use('TkAgg')
 root = Tk()
 root.title('Sudoku')
 root.state('zoomed')
 
 
-#audio MNIST https://www.kaggle.com/alanchn31/free-spoken-digits
-# https://github.com/at16k/at16k
 
 
 class Sudoku:
@@ -39,7 +45,7 @@ class Sudoku:
 					   [0,0,0,0,0,0,0,0,0],
 					   [0,0,0,0,0,0,0,0,0],
 					   [0,0,0,0,0,0,0,0,0]]
-					   				   
+									   
 	
 	def update_value(self, column, row, value):
 		print(row, column)
@@ -143,7 +149,7 @@ sudoku = Sudoku()
 
 
 canvas = Canvas(root, width=root.winfo_screenwidth(), height=root.winfo_screenheight(), 
-                   borderwidth=0, highlightthickness=0)
+				   borderwidth=0, highlightthickness=0)
 canvas.create_line((75, 75), (795, 75), width=4)
 canvas.create_line((75, 315), (795, 315), width=4)
 canvas.create_line((75, 555), (795, 555), width=4)
@@ -203,7 +209,7 @@ with open('model_hmm.pkl', 'rb') as f:
 #https://github.com/msnmkh/Spoken-Digit-Recognition/blob/master/SDR.py
 
 #RECORDING OF THE AUDIO
-def cut_silence(data, sr, threshold = 0.1 , padding = 200):
+def cut_silence(data, sr, threshold = 0.1 , padding = 400):
 	min_val = threshold * max(abs(data))
 	start_audio_pos = 0
 	end_audio_pos = 0
@@ -223,9 +229,30 @@ def cut_silence(data, sr, threshold = 0.1 , padding = 200):
 	zero_padding = np.zeros(value, dtype=int)
 	final_audio = np.concatenate((zero_padding, data, zero_padding))
 	return final_audio
+
+class Counter:
+	def __init__(self):
+		self.counter = 10
+	
+	def update(self):
+		self.counter +=1
+	
+	def current(self):
+		return self.counter
+
+counter1 = Counter()
+
+import soundfile as sf
+
+def submit_solution(variable1):
+	solution = int(variable1.get())
+	solutions_prediction.update_true(solution)
+	buttons[current_button.current_button_col][current_button.current_button_row]['text'] = solution
+	sudoku.update_value(current_button.current_button_col, current_button.current_button_row, solution)
+	toplevel1.destroy()
 	
 def record_audio():
-	fs = 16000	# Sample rate
+	fs = 44100	# Sample rate
 	seconds = 2	 # Duration of recording
 
 	my_recording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
@@ -233,22 +260,42 @@ def record_audio():
 	write('output.wav', fs, my_recording)  # Save as WAV file 
 	
 	wave, sample_rate =	 librosa.load('output.wav')
-	wave = cut_silence(wave, sample_rate)
+	wave = cut_silence(wave, sample_rate)	
 	mfcc_features = mfcc(wave, sample_rate).T
 	
-	#mfcc_features = mfcc(my_recording, fs)
 	scoreList = {}
 	for model_label in hmmModels.keys():
 		model = hmmModels[model_label]
 		score = model.score(mfcc_features)
 		scoreList[model_label] = score
-	predict = max(scoreList, key=scoreList.get)
-	buttons[current_button.current_button_col][current_button.current_button_row]['text'] = predict
-	sudoku.update_value(current_button.current_button_col, current_button.current_button_row, predict)
+	
+	dic2=dict(sorted(scoreList.items(),key= lambda x:x[-1], reverse=True))
+	
+	text = "The prediction of the spoken digit, sorted by likelihood is: \n\n" 
+	options = []
+	for item in dic2:
+		text = f"{text}{item}\n"
+		options.append(item)
+		#print(item)
+	
+	global toplevel1
+	toplevel1 = Toplevel()
+	label2 = Label(toplevel1, text=text, height=0, width=1000)
+	label2.pack()
+	
+	
+	variable1 = StringVar(toplevel1)
+	variable1.set(options[0]) # default value
+	w = OptionMenu(toplevel1, variable1, *options)
+	w.pack()
+	correct_button = Button(toplevel1, text = 'Correct Solution', command = lambda variable1 = variable1: submit_solution(variable1)).pack()
+	solutions_prediction.update_pred(int(options[0]))
+
+	
+
 
 myFont = font.Font(size=18, weight="bold")
 button_rec = Button(root, text='Record audio', font = myFont, command=record_audio)
-#button_rec['font'] = myFont
 button_rec.place(x=900, y=200)
 
 def solve_sudoku():	
@@ -269,8 +316,11 @@ value = StringVar()
  
 def submit():
 	number = value.get()
-	buttons[current_button.current_button_col][current_button.current_button_row]['text'] = number
-	sudoku.update_value(current_button.current_button_col, current_button.current_button_row, number)
+	if number.isdigit():
+		number = int(number)
+		if number > 0 and number < 10:
+			buttons[current_button.current_button_col][current_button.current_button_row]['text'] = number
+			sudoku.update_value(current_button.current_button_col, current_button.current_button_row, number)
 
 myFont = font.Font(size=18, weight="bold")
 value_entry = Entry(root,textvariable = value, font = myFont).place(x=880, y=260)
@@ -307,13 +357,13 @@ Click on reset all to empty the entire sudoku
 
 Click on solve sudoku to get a solution
 Please note:
-  -  If there are multiple solutions, the solver will return only 1 solution
-  -  If there are errors in the given input, the solver will not be able to find a good solution"""
+  -	 If there are multiple solutions, the solver will return only 1 solution
+  -	 If there are errors in the given input, the solver will not be able to find a good solution"""
 
 def clickAbout():
-    toplevel = Toplevel()
-    label1 = Label(toplevel, text=Information_Text, height=0, width=100)
-    label1.pack()
+	toplevel = Toplevel()
+	label1 = Label(toplevel, text=Information_Text, height=0, width=100)
+	label1.pack()
 
 
 button1 = Button(root, text="How to use the sudoku solver", font=myFont, command=clickAbout)
@@ -322,20 +372,58 @@ button1.place(x=900, y=100)
 
 
 
+##########PLOT A CONFUSION MATRIX
 
 
 
+class Confusion_Matrix():
+	def __init__(self):
+		self.true = []
+		self.prediction = []
+	
+	def update_true(self, t):
+		self.true.append(t)
+		
+	def update_pred(self, p):
+		self.prediction.append(p)
+	
+	def return_true(self):
+		return self.true
+		
+	def return_pred(self):
+		return self.prediction
+		
 
+def create_matrix():
+	toplevel = Toplevel()
+	y_pred = solutions_prediction.return_pred()
+	y_true = solutions_prediction.return_true()
+	cm = confusion_matrix(y_true, y_pred)
+	labels = []
+	for item in y_true:
+		labels.append(str(item))
+	class_names = labels
+	fig = plt.figure(figsize=(16, 14))
+	ax= plt.subplot()
+	sns.heatmap(cm, annot=True, ax = ax, fmt = 'g'); #annot=True to annotate cells
+	ax.set_xlabel('Predicted', fontsize=20)
+	ax.xaxis.set_label_position('bottom')
+	plt.xticks(rotation=90)
+	ax.xaxis.set_ticklabels(class_names, fontsize = 10)
+	ax.xaxis.tick_bottom()
 
-
-
-
-
-
-
-
-
-
+	ax.set_ylabel('True', fontsize=20)
+	ax.yaxis.set_ticklabels(class_names, fontsize = 10)
+	plt.yticks(rotation=0)
+	
+	canvas = FigureCanvasTkAgg(fig, master=toplevel)
+	canvas.get_tk_widget().pack()
+	canvas.draw()
+	
+		
+solutions_prediction = Confusion_Matrix()
+stats_button = Button(root, text="Statistics", font=myFont, command=create_matrix)
+stats_button.place(x=900, y=700)
 
 
 root.mainloop()
