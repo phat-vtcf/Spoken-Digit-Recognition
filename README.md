@@ -14,6 +14,13 @@ The main importance is the sudoku_solver code which:
 - it also contains an information page, with more information regarding the program
 
 Please note that this code can NOT be run in google colab, as both the ktinker and the microphone are not compatible with the colab environment.
-To run this code, you can either run it on linux by calling 
-- python3 sudoku_solver.py
-or on windows in the anaconda environment
+To run this code, you can either run it on 
+- linux: python3 sudoku_solver.py
+- windows: using anaconda
+
+To get the code to work on anaconda do the following:
+- install anaconda
+- create a new environment: conda create -n env python = 3.7
+- activate the environment: conda activate env
+Then install all the need packages:
+- 
