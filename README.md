@@ -26,6 +26,7 @@ To run this code, you can either run it on Windows using Anaconda or in the term
 - Linux: python3 sudoku_solver.py
 - Anaconda: python sudoku_solver.py
 
+![sudoku.png](https://github.com/MarjoleinSpijkerman/Spoken-Digit-Recognition/blob/master/sudoku.png)
 This will then open the interface (see the picture above), within the interface there are a couple of things you can do
 - Click on "How to use the sudoku solver", to get information on the usage of the interface
 - To insert numbers into the sudoku:
@@ -42,6 +43,8 @@ This will then open the interface (see the picture above), within the interface 
 - To empty the selected square, click on the "Reset current button" button
 - To empty the entire sudoku, click on the "Reset sudoku" button
 - To solve the sudoku click on the "Solve sudoku" button
+  - It will solve the sudoku based on the numbers that are currently inserted in the sudoku. 
+  - If there are multiple possible solutions, it will display the first found solution
   - If you have inserted any invalid numbers (e.g., the same digit twice in the same row), the code will give an error message and reset all squares. 
 - To look at the confusion matrix click on the "Statistics" button
   - It will show a confusion matrix based on the recorded audio
