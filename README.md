@@ -1,7 +1,20 @@
-Programming: Assignment 7
+# Programming: Assignment 7
+# Sudoku Solver using Speech Recognition for the Recognition of Spoken Digits
 
-By Marjolein Spijkerman and Sarah Faste
+## By Marjolein Spijkerman and Sarah Faste
 
+### The original Github project: Spoken-Digit-Recognition  
+The original project was code to train a HMM model for the recognition of spoken digits based on a small speech dataset based on the original MNST dataset. Their code used Mel-frequency Cepstrum as a way to get the features from the audio dataset. They claimed that their model had an accuracy of 94%. 
+
+### What we planned on doing
+Our plan was to use the HMM model created in the original code for the recognition of spoken digits in a sudoku solver. For this, the main steps that we tried to get to work were:
+- Finding a way to save the model, so that it could be reused in a different setting without having to retrain the model
+- Finding a way to record audio when clicking a button in a GUI
+- Finding a way to store the recorded audio and feed it to the HMM model, so that it could predict the correct digit
+- Finding a way to combine these predictions with a sudoku puzzle
+
+### What ended up working (and what did not work)
+In the end it turned out that training the model again and saving it in a reusable manner was the easiest step. Recording the audio turned out the be a bit trickier, the original plan was to have two buttons; start recording and stop recording. This did not end up working the way we wanted, as we were not able to correctly combine this with the GUI in which we wanted to build our sudoku solver. So, we ended up adding just a record button, that would always record exactly 2 seconds. Which we then combined with a cut silence function, that would remove any white noise around the actual audio that we needed to analyze. Changing this recorded audio in the correct format for the features and using the model to make a prediction based on this feature also did not end up being very problematic. 
 
 
 A sudoku solver using speech recognition for the recognition of spoken digits
@@ -14,14 +27,14 @@ This github has 4 main components
 
 The SDR file is almost identical to the original, with the main difference being that it now saves a pickled version of the model
 The main importance is the sudoku_solver code which:
-- creates a GUI in ktinker where you can
+- creates a GUI in tkinter where you can
 - insert your sudoku either using voice or text based commands
 - solve the sudoku
 - reset the sudoku
 - see a confusion matrix comparing the guesses of the model with the actual input
 - it also contains an information page, with more information regarding the program
 
-Please note that this code can NOT be run in google colab, as both the ktinker and the microphone are not compatible with the colab environment.
+Please note that this code can NOT be run in google colab, as both the tkinter and the microphone are not compatible with the colab environment.
 To run this code, you can either run it on 
 - linux: python3 sudoku_solver.py
 - windows: using anaconda
