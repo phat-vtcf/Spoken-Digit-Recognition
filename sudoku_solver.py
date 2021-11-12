@@ -23,6 +23,13 @@ root = Tk()
 root.title('Sudoku')
 root.state('zoomed')
 
+#to make sure it also fits on other screens, we multiply it with the current screensize / the screensize the original GUI was built on
+width = 1536 
+height = 864
+multiplication_factor_x = root.winfo_screenwidth() / width
+multiplication_factor_y = root.winfo_screenheight() / height	
+
+
 #Defining the sudoku (including the ability to solve itself) as a class 
 class Sudoku:
 	#intialize the sudoku as an empty 9x9 grid filled with 0s
@@ -102,7 +109,37 @@ class Sudoku:
 	
 	#returns the value in a specific square 
 	def return_value(self, row, column):
-		return self.sudoku[row][column]			
+		return self.sudoku[row][column]	
+	
+	def check_around_value(self, row, column, digit):
+	#same as check possible digits, but we should not look at current row/column	
+		for x in range(9):
+			if x != column and self.sudoku[row][x] == digit:
+				return False
+			 
+		for x in range(9):
+			if x != row and self.sudoku[x][column] == digit:
+				return False
+		
+		#Now check the 3x3 block, to see if the digit already exists
+		start_row = row - row % 3
+		start_col = column - column % 3
+		for i in range(3):
+			for j in range(3):
+				if i+start_row != row and j+start_col != column:
+					if self.sudoku[i + start_row][j + start_col] == digit:
+						return False
+		
+		#digit does not exist yet, can be inserted into sudoku
+		return True
+	def check_validity(self):
+		for i in range(9):
+			for j in range(9):
+				if self.sudoku[i][j] != 0:
+					if self.check_around_value(i, j, self.sudoku[i][j]) == False:
+						return False
+		return True 
+		
 
 #This class keeps track of which of the 9 sudoku squares is currently selected
 #Default selected button is position 0,0
@@ -124,31 +161,23 @@ sudoku = Sudoku()
 #create the lines around the sudoku buttons 
 canvas = Canvas(root, width=root.winfo_screenwidth(), height=root.winfo_screenheight(), 
 				   borderwidth=0, highlightthickness=0)
-#thick lines horizontal
-canvas.create_line((75, 75), (795, 75), width=4)
-canvas.create_line((75, 315), (795, 315), width=4)
-canvas.create_line((75, 555), (795, 555), width=4)
-canvas.create_line((75, 795), (795, 795), width=4)
-#thin lines horizontal
-canvas.create_line((75, 155), (795, 155), width=1)
-canvas.create_line((75, 235), (795, 235), width=1)
-canvas.create_line((75, 395), (795, 395), width=1)
-canvas.create_line((75, 475), (795, 475), width=1)
-canvas.create_line((75, 635), (795, 635), width=1)
-canvas.create_line((75, 715), (795, 715), width=1)
 
-#thick lines vertical
-canvas.create_line((75, 75), (75, 795), width=4)
-canvas.create_line((315, 75), (315, 795), width=4)
-canvas.create_line((555, 75), (555, 795), width=4)
-canvas.create_line((795, 75), (795, 795), width=4)
-#thin lines vertical
-canvas.create_line((153, 75), (153, 795), width=1)
-canvas.create_line((233, 75), (233, 795), width=1)
-canvas.create_line((393, 75), (393, 795), width=1)
-canvas.create_line((473, 75), (473, 795), width=1)
-canvas.create_line((633, 75), (633, 795), width=1)
-canvas.create_line((713, 75), (713, 795), width=1)
+				   
+				   
+
+#Horizontal lines 
+for i in range(75, 796, 80):
+	if i == 75 or i == 315 or i == 555 or i == 795:
+		canvas.create_line((75 * multiplication_factor_x, i * multiplication_factor_y), (795 * multiplication_factor_x, i * multiplication_factor_y), width=4)
+	else:
+		canvas.create_line((75 * multiplication_factor_x, i * multiplication_factor_y), (795 * multiplication_factor_x, i *  multiplication_factor_y), width=1)
+
+#Vertical lines
+for i in range(75, 796, 80):
+	if i == 75 or i == 315 or i == 555 or i == 795:
+		canvas.create_line((i*multiplication_factor_x, 75*multiplication_factor_y), (i*multiplication_factor_x, 795*multiplication_factor_y), width=4)
+	else:
+		canvas.create_line((i*multiplication_factor_x, 75*multiplication_factor_y), (i*multiplication_factor_x, 795*multiplication_factor_y), width=1)
 
 #insert the lines into the GUI
 canvas.pack()
@@ -172,14 +201,14 @@ def onClick(i):
 #we create 9 x 9 buttons for the sudoku grid 	
 for i in range(1, 10):
 	#define the used font 
-	myFont = font.Font(size=9, weight="bold")
+	myFont = font.Font(size=int(9*multiplication_factor_x), weight="bold")
 	buttons_column = []
 	for j in range(1, 10):
 		str_pos = str(i) + str(j)
 		b = Button(root, height=4, width=8, text = "", command = lambda str_pos=str_pos: onClick(str_pos))
 		b['font'] = myFont
 		#place them evenly
-		b.place(x=i*80, y=j*80)
+		b.place(x=i*80*multiplication_factor_x, y=j*80*multiplication_factor_y)
 		buttons_column.append(b)
 	buttons.append(buttons_column)
 
@@ -267,25 +296,44 @@ def record_audio():
 	w = OptionMenu(toplevel1, variable1, *options) #create the option menu
 	w.pack() #add the menu to the pop up screen 
 	correct_button = Button(toplevel1, text = 'Correct Solution', command = lambda variable1 = variable1: submit_solution(variable1)).pack() #create the button that is used in the pop up screen 
+	if len(solutions_prediction.return_pred()) != len(solutions_prediction.return_true()):
+		predictions = solutions_predictions.pop()
 	solutions_prediction.update_pred(int(options[0])) #add the predicted solution to the list of solutions (will be used to create confusion matrix)
 
 #create the record audio button 
-myFont = font.Font(size=18, weight="bold")
+myFont = font.Font(size=int(18 * multiplication_factor_x), weight="bold")
 button_rec = Button(root, text='Record audio', font = myFont, command=record_audio)
-button_rec.place(x=900, y=200)
+button_rec.place(x=900*multiplication_factor_x, y=200*multiplication_factor_y)
 
 #create the solve sudoku button 
 #clicking it will solve the sudoku and update the GUI
 def solve_sudoku():	
-	sudoku.solve_sudoku_recursion(0, 0)
+	#Make sure that the inserted values actually can lead to a solved sudoku
+	if sudoku.check_validity() == True:
+		sudoku.solve_sudoku_recursion(0, 0)
+		for i in range(9):
+			for j in range(9):
+				buttons[i][j]['text'] = sudoku.return_value(j, i)
 	
-	for i in range(9):
-		for j in range(9):
-			buttons[i][j]['text'] = sudoku.return_value(j, i)
+	#The inserted digits contain an error, reset the entire sudoku
+	else:
+		my_font_error = font.Font(size=15, weight="bold")
+		error_message = Toplevel() #create a new pop up screen 
+		text_message = "The inserted sudoku contains invalid digits. The sudoku will be reset"
+		label = Label(error_message, text=text_message, font=my_font_error, fg = 'red') #add the created text message to the pop up screen 
+		label.pack(side= TOP, anchor="w")
+		closing_button = Button(error_message, text = 'ok', command = error_message.destroy).pack()
+		
+		for i in range(9):
+			for j in range(9):
+				buttons[i][j]['text'] = ""
+				sudoku.update_value(j, i, 0)
+	
+
 			
-myFont = font.Font(size=18, weight="bold")	
+myFont = font.Font(size=int(18 * multiplication_factor_x), weight="bold")	
 button_solve = Button(root, text='Solve sudoku', font=myFont, command=solve_sudoku)
-button_solve.place(x=900, y=540)
+button_solve.place(x=900*multiplication_factor_x, y=540*multiplication_factor_y)
 
 
 
@@ -295,15 +343,30 @@ button_solve.place(x=900, y=540)
 value = StringVar()
 def submit():
 	number = value.get()
+	contains_error = False 
 	if number.isdigit():
 		number = int(number)
 		if number > 0 and number < 10:
 			buttons[current_button.current_button_col][current_button.current_button_row]['text'] = number
 			sudoku.update_value(current_button.current_button_col, current_button.current_button_row, number)
-
-myFont = font.Font(size=18, weight="bold")
-value_entry = Entry(root,textvariable = value, font = myFont).place(x=880, y=260)
-sub_btn=Button(root,text = 'Manual override', font = myFont, command = submit).place(x=900, y=300)
+		else:
+			contains_error = True
+	else:
+		contains_error = True
+	
+	#If wrong input, give error message
+	if contains_error == True:
+		error_message = Toplevel() #create a new pop up screen 
+		text_message = "Please insert an integer number between 1 and 9"
+		my_font = font.Font(size=15, weight="bold")
+		label2 = Label(error_message, text=text_message, font=my_font) #add the created text message to the pop up screen 
+		label2.pack(side= TOP, anchor="w")
+		closing_button = Button(error_message, text = 'ok', command = error_message.destroy).pack()
+		
+		
+myFont = font.Font(size=int(18 * multiplication_factor_x), weight="bold")
+value_entry = Entry(root,textvariable = value, font = myFont).place(x=880*multiplication_factor_x, y=260*multiplication_factor_y)
+sub_btn=Button(root,text = 'Manual override', font = myFont, command = submit).place(x=900*multiplication_factor_x, y=300*multiplication_factor_y)
 
 #the reset buttons, either will reset the current square or reset the entire sudoku
 def reset_one():
@@ -317,46 +380,37 @@ def reset_all():
 			buttons[i][j]['text'] = ''
 			sudoku.update_value(i, j, 0)
 
-myFont = font.Font(size=18, weight="bold")	
+myFont = font.Font(size=int(18 * multiplication_factor_x), weight="bold")	
 button_reset_1 = Button(root, text='Reset current button', font=myFont, command=reset_one)
-button_reset_1.place(x=900, y=420)
+button_reset_1.place(x=900*multiplication_factor_x, y=420*multiplication_factor_y)
 	
 button_reset_all = Button(root, text='Reset sudoku', font=myFont, command=reset_all)
-button_reset_all.place(x=900, y=480)
+button_reset_all.place(x=900*multiplication_factor_x, y=480*multiplication_factor_y)
 
 
 
 #Creation of the about page, which creates a pop-up screen containing some information regarding the program 
-Information_Text = """How to use the sudoku solver:
+Information_Text = ["How to use the sudoku solver:", "", "First select a square in the sudoku --> the currently selected square will turn blue", 
+					"Then either select record audio to insert a number between 1 and 9 by means of speaking or manually insert a number",
+					"When picking the record audio options, the program will do the following", "  - record for 2 seconds", 
+					"  -  create a new pop-up window containing:", "      -  a list with all digit predictions, sorted on most likely to least likely",
+					"      -  a menu, where you need to pick the digit you just said out loud", "", "Click on reset current button, to empty the current square",
+					"Click on reset all to empty the entire sudoku", "Click on solve sudoku to get a solution", "Please note:", 
+					"  -  If there are multiple solutions, the solver will return only 1 solution", 
+					"  -  If there are errors in the given input and you click on solve, it will reset the entire sudoku to avoid the error", 
+					"After using the record option at least once, the statistics button will show a confusion matrix.", 
+					"Please note that it won't show a confusion matrix, if it has no data yet."]
 
-First select a square in the sudoku --> the currently selected square will turn blue
-Then either select record audio to insert a number between 1 and 9 by means of speaking or manually insert a number
-When picking the record audio options, the program will do the following
-  - record for 2 seconds
-  - create a new pop-up window containing:
-    -- a list with all digit predictions, sorted on most likely to least likely
-    -- a menu, where you need to pick the digit you just said out loud
-
-Click on reset current button, to empty the current square
-Click on reset all to empty the entire sudoku
-
-Click on solve sudoku to get a solution
-Please note:
-  -	 If there are multiple solutions, the solver will return only 1 solution
-  -	 If there are errors in the given input, the solver will not be able to find a good solution
-
-After using the record option at least once, the statistics button will show a confusion matrix.
-Please note that it won't show a confusion matrix, if it has no data yet. 
-  """
-
+  
 def clickAbout():
 	toplevel = Toplevel()
-	label1 = Label(toplevel, text=Information_Text, height=0, width=100)
-	label1.pack()
+	for sentence in Information_Text:
+		label1 = Label(toplevel, text=sentence)
+		label1.pack(side= TOP, anchor="w")
 
 
 button1 = Button(root, text="How to use the sudoku solver", font=myFont, command=clickAbout)
-button1.place(x=900, y=100)
+button1.place(x=900*multiplication_factor_x, y=100*multiplication_factor_y)
 
 
 
@@ -380,47 +434,66 @@ class Confusion_Matrix():
 		
 	def return_pred(self):
 		return self.prediction
+	
+	def pop(self):
+		self.prediction.pop()
 		
 
 def create_matrix():
 	#create the pop-up screen 
 	toplevel = Toplevel()
 	
+	#make sure both are same length
+	if len(solutions_prediction.return_pred()) != len(solutions_prediction.return_true()):
+		predictions = solutions_predictions.pop()
+		
 	#get a list of predictions and solutions 
 	y_pred = solutions_prediction.return_pred()
 	y_true = solutions_prediction.return_true()
 	
-	#make the confusion matrix 
-	cm = confusion_matrix(y_true, y_pred)
+	if len(y_pred) == 0: #no data to show yet
+		text_message = "There is no data to show yet"
+		my_font = font.Font(size=15, weight="bold")
+		label2 = Label(toplevel, text=text_message, font=my_font) #add the created text message to the pop up screen 
+		label2.pack(side= TOP, anchor="w")
+		closing_button = Button(toplevel, text = 'ok', command = toplevel.destroy).pack()
 	
-	#create the labels (only the ones that were used so far)
-	labels = []
-	for item in y_true:
-		labels.append(str(item))
-	class_names = labels
-	
-	#create the plot 
-	fig = plt.figure(figsize=(16, 14))
-	ax= plt.subplot()
-	sns.heatmap(cm, annot=True, ax = ax, fmt = 'g'); #annot=True to annotate cells
-	ax.set_xlabel('Predicted', fontsize=20)
-	ax.xaxis.set_label_position('bottom')
-	plt.xticks(rotation=90)
-	ax.xaxis.set_ticklabels(class_names, fontsize = 10)
-	ax.xaxis.tick_bottom()
+	else: #There is data to show in the confusion matrix 
+		#make the confusion matrix 
+		cm = confusion_matrix(y_true, y_pred)
+		
+		#create the labels (only the ones that were used so far)
+		labels = []
+		for item in y_true:
+			if str(item) not in labels:
+				labels.append(str(item))
+		for item in y_pred:
+			if str(item) not in labels:
+				labels.append(str(item))
+		class_names = labels
+		
+		#create the plot 
+		fig = plt.figure(figsize=(12*multiplication_factor_x, 10*multiplication_factor_y))
+		ax= plt.subplot()
+		sns.heatmap(cm, annot=True, ax = ax, fmt = 'g'); #annot=True to annotate cells
+		ax.set_xlabel('Predicted', fontsize=20)
+		ax.xaxis.set_label_position('bottom')
+		plt.xticks(rotation=90)
+		ax.xaxis.set_ticklabels(class_names, fontsize = 10)
+		ax.xaxis.tick_bottom()
 
-	ax.set_ylabel('True', fontsize=20)
-	ax.yaxis.set_ticklabels(class_names, fontsize = 10)
-	plt.yticks(rotation=0)
-	
-	canvas = FigureCanvasTkAgg(fig, master=toplevel)
-	canvas.get_tk_widget().pack()
-	canvas.draw()
+		ax.set_ylabel('True', fontsize=20)
+		ax.yaxis.set_ticklabels(class_names, fontsize = 10)
+		plt.yticks(rotation=0)
+		
+		canvas = FigureCanvasTkAgg(fig, master=toplevel)
+		canvas.get_tk_widget().pack()
+		canvas.draw()
 	
 #button that will call upon a new screen containing a confusion matrix 		
 solutions_prediction = Confusion_Matrix()
 stats_button = Button(root, text="Statistics", font=myFont, command=create_matrix)
-stats_button.place(x=900, y=700)
+stats_button.place(x=900*multiplication_factor_x, y=700*multiplication_factor_y)
 
 
 root.mainloop()
